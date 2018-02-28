@@ -51,10 +51,9 @@ public class DeviceGroupQueryActor extends AbstractActor {
     }
 
     @Override
-    public void preStart() throws Exception {
+    public void preStart() {
         logger.info("DeviceGroupQueryActor started and send TemperatureRequest to [{}] devices.", this.deviceActorRefs.size());
-        this.deviceActorRefs.keySet().stream()
-                .forEach(this::sendTemperatureRequest);
+        this.deviceActorRefs.keySet().forEach(this::sendTemperatureRequest);
     }
 
     private void sendTemperatureRequest(ActorRef deviceActorRef) {
@@ -63,7 +62,8 @@ public class DeviceGroupQueryActor extends AbstractActor {
     }
 
     @Override
-    public void postStop() throws Exception {
+    public void postStop() {
+        logger.info("DeviceGroupQueryActor is stopped and QueryTimeoutTimer is going to be canceled.");
         this.queryTimeoutTimer.cancel();
     }
 
@@ -85,11 +85,13 @@ public class DeviceGroupQueryActor extends AbstractActor {
 
     private void onDeviceTerminated(Map<ActorRef, String> pendingDeviceActors, Map<String, Temperature> temperatures,
                                     Terminated terminated) {
+        logger.info("Receive Device Termination event from actor: [{}]", terminated.getActor());
         this.receivedResponse(pendingDeviceActors, temperatures, terminated.actor(), new DeviceNotAvailable());
     }
 
     private void onCollectionTimeout(Map<ActorRef, String> pendingDeviceActors, Map<String, Temperature> temperatures) {
-        pendingDeviceActors.values().stream()
+        logger.info("Receive CollectionTimeout message.");
+        pendingDeviceActors.values()
                 .forEach(deviceId -> temperatures.put(deviceId, new DeviceTimeOut()));
         this.requestSender.tell(new AllTemperaturesResponse(this.requestId, temperatures), this.getSelf());
         this.getContext().stop(this.getSelf());
@@ -97,6 +99,7 @@ public class DeviceGroupQueryActor extends AbstractActor {
 
     private void onTemperatureResponse(Map<ActorRef, String> pendingDeviceActors, Map<String, Temperature> temperatures,
                                        TemperatureResponse temperatureResponse) {
+        logger.info("Receive TemperatureResponse: [{}] by sender: [{}].", temperatureResponse, this.getSender());
         Temperature temperatureResult = temperatureResponse.getValue()
                 .map(TemperatureValue::new)
                 .map(this::toTemperature)

@@ -1,6 +1,7 @@
 package com.lightbend.akka.sample.iot;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -12,12 +13,23 @@ public class TemperatureStatus {
 
         private final long requestId;
 
+        private final long timeoutMillis;
+
         public AllTemperaturesRequest(long requestId) {
+            this(requestId, 3000L);
+        }
+
+        public AllTemperaturesRequest(long requestId, long timeoutMillis) {
             this.requestId = requestId;
+            this.timeoutMillis = timeoutMillis;
         }
 
         public long getRequestId() {
             return requestId;
+        }
+
+        public long getTimeoutMillis() {
+            return timeoutMillis;
         }
     }
 
@@ -53,6 +65,19 @@ public class TemperatureStatus {
 
         public double getValue() {
             return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TemperatureValue that = (TemperatureValue) o;
+            return Double.compare(that.getValue(), getValue()) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getValue());
         }
     }
 
@@ -126,6 +151,15 @@ public class TemperatureStatus {
 
         public Optional<Double> getValue() {
             return value;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("TemperatureResponse{");
+            sb.append("requestId=").append(requestId);
+            sb.append(", value=").append(value);
+            sb.append('}');
+            return sb.toString();
         }
     }
 }

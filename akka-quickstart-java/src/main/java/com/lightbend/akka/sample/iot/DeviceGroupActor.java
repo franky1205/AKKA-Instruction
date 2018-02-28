@@ -11,8 +11,11 @@ import com.google.common.collect.HashBiMap;
 import com.lightbend.akka.sample.iot.DeviceTracker.DeviceListRequest;
 import com.lightbend.akka.sample.iot.DeviceTracker.DeviceListResponse;
 import com.lightbend.akka.sample.iot.DeviceTracker.DeviceTrackingRequest;
+import com.lightbend.akka.sample.iot.TemperatureStatus.AllTemperaturesRequest;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Frankie on 2018/2/20.
@@ -49,6 +52,7 @@ public class DeviceGroupActor extends AbstractActor {
                 .match(DeviceTrackingRequest.class, this::trackingDevice)
                 .match(DeviceListRequest.class, this::listDeviceIds)
                 .match(Terminated.class, this::terminateDeviceActor)
+                .match(AllTemperaturesRequest.class, this::onAllTemperaturesRequest)
                 .build();
     }
 
@@ -78,5 +82,13 @@ public class DeviceGroupActor extends AbstractActor {
             logger.info("Device actor with device ID: [{}] has been terminated.", deviceId);
             return null;
         });
+    }
+
+    private void onAllTemperaturesRequest(AllTemperaturesRequest allTemperaturesRequest) {
+        this.getContext().actorOf(DeviceGroupQueryActor.props(
+                deviceActors.inverse(),
+                allTemperaturesRequest.getRequestId(),
+                this.getSender(),
+                new FiniteDuration(allTemperaturesRequest.getTimeoutMillis(), TimeUnit.MILLISECONDS)), "DeviceGroupQueryActor");
     }
 }
