@@ -1,1 +1,4 @@
 akka-quickstart-java/target
+akka-remote-server/target
+akka-remote-core/target
+akka-remote-client/target

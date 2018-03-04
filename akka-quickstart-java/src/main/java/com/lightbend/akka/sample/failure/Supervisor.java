@@ -4,6 +4,8 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 
+import java.util.stream.IntStream;
+
 /**
  * Created by Frankie on 2018/2/19.
  */
@@ -27,7 +29,8 @@ public class Supervisor extends AbstractActor {
         return this.receiveBuilder()
                 .matchEquals("failedChild", message -> {
                     System.out.println(Thread.currentThread().getName() + " Invoke Child to fail.");
-                    supervisedActorRef.tell("failed", this.getSelf());
+                    this.getContext().getChildren()
+                            .forEach(childActorRef -> supervisedActorRef.tell("failed", this.getSelf()));
                 })
                 .build();
     }
