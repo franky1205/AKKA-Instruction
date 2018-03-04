@@ -6,10 +6,11 @@ import akka.actor.ActorSelection;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.ruckuswireless.scg.remote.core.ActorRefRequest;
-import com.ruckuswireless.scg.remote.core.ActorRefResponse;
 import com.ruckuswireless.scg.remote.core.EchoMessageRequest;
 import com.ruckuswireless.scg.remote.core.EchoMessageResponse;
+import scala.concurrent.duration.FiniteDuration;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Frankie on 2018/3/4.
@@ -34,7 +35,8 @@ public class EchoClientActor extends AbstractActor {
     public void preStart() throws Exception {
         logger.info("EchoClientActor is going to be started with the remote actor path: [{}]", this.remoteActorPath);
         ActorSelection remoteActorSelection = this.getContext().actorSelection(this.remoteActorPath);
-        remoteActorSelection.tell(new ActorRefRequest(), this.getSelf());
+        remoteActorSelection.resolveOneCS(new FiniteDuration(5, TimeUnit.SECONDS))
+                .thenAccept(remoteActorRef -> this.remoteActorRef = remoteActorRef);
     }
 
     @Override
@@ -45,15 +47,9 @@ public class EchoClientActor extends AbstractActor {
     @Override
     public Receive createReceive() {
         return this.receiveBuilder()
-                .match(ActorRefResponse.class, this::onActorRefResponse)
                 .match(EchoMessageRequest.class, this::onEchoMessageRequest)
                 .match(EchoMessageResponse.class, this::onEchoMessageResponse)
                 .build();
-    }
-
-    private void onActorRefResponse(ActorRefResponse actorRefResponse) {
-        logger.info("Receive ActorRefResponse from sender: [{}]", this.getSender());
-        this.remoteActorRef = this.getSender();
     }
 
     private void onEchoMessageRequest(EchoMessageRequest echoMessageRequest) {
