@@ -1,6 +1,8 @@
 package com.lightbend.akka.sample.failure;
 
 import akka.actor.AbstractActor;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 
 import java.util.Optional;
 
@@ -8,6 +10,8 @@ import java.util.Optional;
  * Created by Frankie on 2018/2/19.
  */
 public class Supervised extends AbstractActor {
+
+    private final LoggingAdapter logger = Logging.getLogger(getContext().getSystem(), this);
 
     @Override
     public void preStart() throws Exception {
@@ -35,7 +39,7 @@ public class Supervised extends AbstractActor {
     public Receive createReceive() {
         return this.receiveBuilder()
                 .matchEquals("failed", message -> {
-                    System.out.println(Thread.currentThread().getName() + " Throw new Failure");
+                    logger.error("Throw new Failure");
                     throw new RuntimeException("Supervised Actor failed.");
                 })
                 .build();
